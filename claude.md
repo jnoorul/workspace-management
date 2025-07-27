@@ -21,7 +21,13 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
 
 1. **Extract the entity name** from the user command.
 
-2. **Prepare the list of URLs** to be launched. Use the extracted entity to prefill relevant query parameters:
+2. **Check for existing windows** (for efficiency and reuse):
+   - Use `mcp__playwright__browser_tab_list` to check if investment analysis windows are already open
+   - **IMPORTANT**: Always check for and close any blank/empty tabs (about:blank) before creating new windows using `mcp__playwright__browser_tab_close` to prevent having 4 windows instead of 3
+   - If 3+ windows exist with Yahoo Finance, Google News, and TradingView URLs, navigate existing windows instead of opening new ones
+   - Navigate each existing window to the new entity using `mcp__playwright__browser_navigate`
+
+3. **Prepare the list of URLs** to be launched (if new windows needed). Use the extracted entity to prefill relevant query parameters:
 
 ```json
 [
@@ -33,9 +39,11 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
 
 **Note**: For TradingView, use the format `NASDAQ-{ENTITY}` for US stock symbols (e.g., `NASDAQ-AAPL`, `NASDAQ-MSFT`).
 
-3. **Launch each URL in a separate browser window** using Playwright MCP. The recommended approach is to use `window.open()` with proper positioning parameters to ensure true OS-level window separation.
+4. **Launch each URL in a separate browser window** (if new windows needed) using Playwright MCP. The recommended approach is to use `window.open()` with proper positioning parameters to ensure true OS-level window separation.
 
-4. **Layout Logic & Window Opening Technique**:
+   **CRITICAL**: After creating the 3 investment analysis windows, ALWAYS close the original blank tab (about:blank) using `mcp__playwright__browser_tab_close` to ensure exactly 3 windows remain.
+
+5. **Layout Logic & Window Opening Technique**:
 
 - For 2 windows: split screen 50% each.
 - For 3 windows: split screen 33.3% each.
@@ -90,7 +98,15 @@ mcp__playwright__browser_evaluate(() => {
 
 This approach ensures true OS-level window separation and proper positioning.
 
-6. (Optional) **Interact with the websites**: Wait for page load and perform actions such as search, scrolling, or highlighting if needed.
+6. **Window Reuse Logic** (for efficiency):
+   When investment analysis windows already exist, instead of opening new windows:
+   - Check existing tabs using `mcp__playwright__browser_tab_list`
+   - Navigate the Yahoo Finance tab to `https://finance.yahoo.com/quote/{NEW_ENTITY}`
+   - Navigate the Google News tab to `https://news.google.com/search?q={NEW_ENTITY}`
+   - Navigate the TradingView tab to `https://www.tradingview.com/symbols/NASDAQ-{NEW_ENTITY}/`
+   - This provides seamless switching between different stock analyses without reopening windows
+
+7. (Optional) **Interact with the websites**: Wait for page load and perform actions such as search, scrolling, or highlighting if needed.
 
 ---
 
