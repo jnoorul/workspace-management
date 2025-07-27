@@ -23,16 +23,18 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
 
 2. **Check for existing windows** (for efficiency and reuse):
    - Use `mcp__playwright__browser_tab_list` to check if investment analysis windows are already open
+   - **CRITICAL REQUIREMENT**: NEVER open new windows if investment analysis windows already exist. ALWAYS reuse existing windows by navigating them to the new entity.
    - **IMPORTANT**: Always check for and close any blank/empty tabs (about:blank) before creating new windows using `mcp__playwright__browser_tab_close` to prevent having 4 windows instead of 3
-   - If 3+ windows exist with Yahoo Finance, Google News, and TradingView URLs, navigate existing windows instead of opening new ones
+   - If ANY windows exist with Yahoo Finance, Google News, and TradingView URLs, navigate existing windows instead of opening new ones
    - Navigate each existing window to the new entity using `mcp__playwright__browser_navigate`
+   - **FAILURE TO FOLLOW THIS RULE WILL RESULT IN TERMINATION**
 
 3. **Prepare the list of URLs** to be launched (if new windows needed). Use the extracted entity to prefill relevant query parameters:
 
 ```json
 [
   "https://finance.yahoo.com/quote/{ENTITY}",
-  "https://news.google.com/search?q={ENTITY}",
+  "https://www.reuters.com/site-search/?query={ENTITY}",
   "https://www.tradingview.com/symbols/NASDAQ-{ENTITY}/"
 ]
 ```
@@ -47,38 +49,41 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
 
 - For 2 windows: split screen 50% each.
 - For 3 windows: split screen 33.3% each.
-- Use fixed screen height (e.g., 1080px). The system will automatically detect screen width and calculate appropriate window sizes.
-- **Dynamic sizing**: Each window will be `Math.floor(window.screen.width / 3)` pixels wide for optimal display coverage.
+- **CRITICAL REQUIREMENT**: Use FULL screen height (window.screen.height) and equal width distribution across the display.
+- **Dynamic sizing**: Each window will be `Math.floor(window.screen.width / 3)` pixels wide and `window.screen.height` pixels tall for optimal display coverage.
+- Windows must use the ENTIRE display height, not fixed 1080px.
 
 **IMPORTANT**: Use the `mcp__playwright__browser_evaluate` function with `window.open()` to create separate browser windows:
 
 For 3-window layout (recommended approach with dynamic screen width detection):
 
-1. **First window (Yahoo Finance)** - Open with correct width from the start:
+1. **First window (Yahoo Finance)** - Open with correct width and FULL height:
 ```javascript
 mcp__playwright__browser_evaluate(() => {
   const screenWidth = window.screen.width;
+  const screenHeight = window.screen.height;
   const windowWidth = Math.floor(screenWidth / 3);
   const yahooWindow = window.open(
     "https://finance.yahoo.com/quote/{ENTITY}", 
     "_blank", 
-    `width=${windowWidth},height=1080,left=0,top=0,resizable=yes,scrollbars=yes`
+    `width=${windowWidth},height=${screenHeight},left=0,top=0,resizable=yes,scrollbars=yes`
   );
-  return yahooWindow ? `Yahoo Finance opened with ${windowWidth}px width` : "Failed to open window";
+  return yahooWindow ? `Yahoo Finance opened with ${windowWidth}px width and ${screenHeight}px height` : "Failed to open window";
 })
 ```
 
-2. **Second window (Google News)**:
+2. **Second window (Reuters News)**:
 ```javascript
 mcp__playwright__browser_evaluate(() => {
   const screenWidth = window.screen.width;
+  const screenHeight = window.screen.height;
   const windowWidth = Math.floor(screenWidth / 3);
   const newWindow = window.open(
-    "https://news.google.com/search?q={ENTITY}", 
+    "https://www.reuters.com/site-search/?query={ENTITY}", 
     "_blank", 
-    `width=${windowWidth},height=1080,left=${windowWidth},top=0,resizable=yes,scrollbars=yes`
+    `width=${windowWidth},height=${screenHeight},left=${windowWidth},top=0,resizable=yes,scrollbars=yes`
   );
-  return newWindow ? `Google News window opened with ${windowWidth}px width` : "Failed to open window";
+  return newWindow ? `Reuters News window opened with ${windowWidth}px width and ${screenHeight}px height` : "Failed to open window";
 })
 ```
 
@@ -86,13 +91,14 @@ mcp__playwright__browser_evaluate(() => {
 ```javascript
 mcp__playwright__browser_evaluate(() => {
   const screenWidth = window.screen.width;
+  const screenHeight = window.screen.height;
   const windowWidth = Math.floor(screenWidth / 3);
   const newWindow = window.open(
     "https://www.tradingview.com/symbols/NASDAQ-{ENTITY}/", 
     "_blank", 
-    `width=${windowWidth},height=1080,left=${windowWidth * 2},top=0,resizable=yes,scrollbars=yes`
+    `width=${windowWidth},height=${screenHeight},left=${windowWidth * 2},top=0,resizable=yes,scrollbars=yes`
   );
-  return newWindow ? `TradingView window opened with ${windowWidth}px width` : "Failed to open window";
+  return newWindow ? `TradingView window opened with ${windowWidth}px width and ${screenHeight}px height` : "Failed to open window";
 })
 ```
 
@@ -102,11 +108,12 @@ This approach ensures true OS-level window separation and proper positioning.
    When investment analysis windows already exist, instead of opening new windows:
    - Check existing tabs using `mcp__playwright__browser_tab_list`
    - Navigate the Yahoo Finance tab to `https://finance.yahoo.com/quote/{NEW_ENTITY}`
-   - Navigate the Google News tab to `https://news.google.com/search?q={NEW_ENTITY}`
+   - Navigate the Reuters News tab to `https://www.reuters.com/site-search/?query={NEW_ENTITY}`
    - Navigate the TradingView tab to `https://www.tradingview.com/symbols/NASDAQ-{NEW_ENTITY}/`
    - This provides seamless switching between different stock analyses without reopening windows
 
 7. (Optional) **Interact with the websites**: Wait for page load and perform actions such as search, scrolling, or highlighting if needed.
+   - **For Reuters News**: After navigating to the search results, scroll down slightly using `mcp__playwright__browser_evaluate` with `window.scrollBy(0, 400)` to show more news articles with better visibility.
 
 ---
 
