@@ -37,37 +37,54 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
 
 4. **Layout Logic & Window Opening Technique**:
 
-- For 2 windows: split screen 50% each (640px width each).
-- For 3 windows: split screen 33.3% each (~427px width each).
-- Use fixed screen height (e.g., 1080px). Assume total screen width is 1280px for layout.
+- For 2 windows: split screen 50% each.
+- For 3 windows: split screen 33.3% each.
+- Use fixed screen height (e.g., 1080px). The system will automatically detect screen width and calculate appropriate window sizes.
+- **Dynamic sizing**: Each window will be `Math.floor(window.screen.width / 3)` pixels wide for optimal display coverage.
 
 **IMPORTANT**: Use the `mcp__playwright__browser_evaluate` function with `window.open()` to create separate browser windows:
 
-For 3-window layout (recommended approach):
+For 3-window layout (recommended approach with dynamic screen width detection):
 
-1. **First window (Yahoo Finance)** - Navigate normally, then resize and position:
+1. **First window (Yahoo Finance)** - Open with correct width from the start:
 ```javascript
-mcp__playwright__browser_navigate("https://finance.yahoo.com/quote/{ENTITY}")
 mcp__playwright__browser_evaluate(() => {
-  window.resizeTo(427, 1080);
-  window.moveTo(0, 0);
-  return "First window positioned";
+  const screenWidth = window.screen.width;
+  const windowWidth = Math.floor(screenWidth / 3);
+  const yahooWindow = window.open(
+    "https://finance.yahoo.com/quote/{ENTITY}", 
+    "_blank", 
+    `width=${windowWidth},height=1080,left=0,top=0,resizable=yes,scrollbars=yes`
+  );
+  return yahooWindow ? `Yahoo Finance opened with ${windowWidth}px width` : "Failed to open window";
 })
 ```
 
 2. **Second window (Google News)**:
 ```javascript
 mcp__playwright__browser_evaluate(() => {
-  const newWindow = window.open("https://news.google.com/search?q={ENTITY}", "_blank", "width=427,height=1080,left=427,top=0,resizable=yes,scrollbars=yes");
-  return newWindow ? "Window opened successfully" : "Failed to open window";
+  const screenWidth = window.screen.width;
+  const windowWidth = Math.floor(screenWidth / 3);
+  const newWindow = window.open(
+    "https://news.google.com/search?q={ENTITY}", 
+    "_blank", 
+    `width=${windowWidth},height=1080,left=${windowWidth},top=0,resizable=yes,scrollbars=yes`
+  );
+  return newWindow ? `Google News window opened with ${windowWidth}px width` : "Failed to open window";
 })
 ```
 
 3. **Third window (TradingView)**:
 ```javascript
 mcp__playwright__browser_evaluate(() => {
-  const newWindow = window.open("https://www.tradingview.com/symbols/NASDAQ-{ENTITY}/", "_blank", "width=426,height=1080,left=854,top=0,resizable=yes,scrollbars=yes");
-  return newWindow ? "Window opened successfully" : "Failed to open window";
+  const screenWidth = window.screen.width;
+  const windowWidth = Math.floor(screenWidth / 3);
+  const newWindow = window.open(
+    "https://www.tradingview.com/symbols/NASDAQ-{ENTITY}/", 
+    "_blank", 
+    `width=${windowWidth},height=1080,left=${windowWidth * 2},top=0,resizable=yes,scrollbars=yes`
+  );
+  return newWindow ? `TradingView window opened with ${windowWidth}px width` : "Failed to open window";
 })
 ```
 
