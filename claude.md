@@ -25,7 +25,7 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
    - Use `mcp__playwright__browser_tab_list` to check if investment analysis windows are already open
    - **CRITICAL REQUIREMENT**: NEVER open new windows if investment analysis windows already exist. ALWAYS reuse existing windows by navigating them to the new entity.
    - **IMPORTANT**: Always check for and close any blank/empty tabs (about:blank) before creating new windows using `mcp__playwright__browser_tab_close` to prevent having 4 windows instead of 3
-   - If ANY windows exist with Yahoo Finance, Google News, and TradingView URLs, navigate existing windows instead of opening new ones
+   - If ANY windows exist with Yahoo Finance, FactSet News, and TradingView URLs, navigate existing windows instead of opening new ones
    - Navigate each existing window to the new entity using `mcp__playwright__browser_navigate`
    - **FAILURE TO FOLLOW THIS RULE WILL RESULT IN TERMINATION**
 
@@ -34,7 +34,7 @@ You will extract the **target entity** (e.g., Apple, Tesla, Microsoft) and carry
 ```json
 [
   "https://finance.yahoo.com/quote/{ENTITY}",
-  "https://www.reuters.com/site-search/?query={ENTITY}",
+  "https://www.factset.com/search?keys={ENTITY}",
   "https://www.tradingview.com/symbols/NASDAQ-{ENTITY}/"
 ]
 ```
@@ -72,18 +72,18 @@ mcp__playwright__browser_evaluate(() => {
 })
 ```
 
-2. **Second window (Reuters News)**:
+2. **Second window (FactSet News)**:
 ```javascript
 mcp__playwright__browser_evaluate(() => {
   const screenWidth = window.screen.width;
   const screenHeight = window.screen.height;
   const windowWidth = Math.floor(screenWidth / 3);
   const newWindow = window.open(
-    "https://www.reuters.com/site-search/?query={ENTITY}", 
+    "https://www.factset.com/search?keys={ENTITY}", 
     "_blank", 
     `width=${windowWidth},height=${screenHeight},left=${windowWidth},top=0,resizable=yes,scrollbars=yes`
   );
-  return newWindow ? `Reuters News window opened with ${windowWidth}px width and ${screenHeight}px height` : "Failed to open window";
+  return newWindow ? `FactSet News window opened with ${windowWidth}px width and ${screenHeight}px height` : "Failed to open window";
 })
 ```
 
@@ -108,12 +108,12 @@ This approach ensures true OS-level window separation and proper positioning.
    When investment analysis windows already exist, instead of opening new windows:
    - Check existing tabs using `mcp__playwright__browser_tab_list`
    - Navigate the Yahoo Finance tab to `https://finance.yahoo.com/quote/{NEW_ENTITY}`
-   - Navigate the Reuters News tab to `https://www.reuters.com/site-search/?query={NEW_ENTITY}`
+   - Navigate the FactSet News tab to `https://www.factset.com/search?keys={NEW_ENTITY}`
    - Navigate the TradingView tab to `https://www.tradingview.com/symbols/NASDAQ-{NEW_ENTITY}/`
    - This provides seamless switching between different stock analyses without reopening windows
 
 7. (Optional) **Interact with the websites**: Wait for page load and perform actions such as search, scrolling, or highlighting if needed.
-   - **For Reuters News**: After navigating to the search results, scroll down slightly using `mcp__playwright__browser_evaluate` with `window.scrollBy(0, 400)` to show more news articles with better visibility.
+   - **For FactSet News**: After navigating to the search results, scroll down slightly using `mcp__playwright__browser_evaluate` with `window.scrollBy(0, 400)` to show more news articles with better visibility.
 
 ---
 
